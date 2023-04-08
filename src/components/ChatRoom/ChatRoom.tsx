@@ -8,18 +8,23 @@ import {
     CardFooter, 
     Heading
 } from "@chakra-ui/react";
-import { ChatMessage } from "../ChatMessage/ChatMessage";
+import { ChatMessage ,IChatMessage} from "../ChatMessage/ChatMessage";
+import { DataConnection } from "peerjs";
+import { text } from "stream/consumers";
 
-export function ChatRoom() {
-    const message ="Hello world" ;
-    // const sendMessage = async(e:any)=> { 
-    //     e.preventDefault();
-    //     console.log("Send message");
-    // }
+export function ChatRoom(props: {
+    dataConnection: React.MutableRefObject<DataConnection | undefined>,
+    messages: IChatMessage[]  })
+{
     const [inputValue, setInputValue] = React.useState<string>("");
+    const [connected, setConnected] = React.useState<boolean>(false);
     const sendMessage =() => { 
+
         console.log("Send message");
         console.log(inputValue) ;
+        if(props.dataConnection.current){
+            props.dataConnection.current.send(inputValue) ;
+        }        
         setInputValue('') ;
     }
     return (
@@ -28,7 +33,6 @@ export function ChatRoom() {
                 <Heading>Chat room</Heading>
             </CardHeader>
             <CardBody>
-                <ChatMessage message={inputValue}></ChatMessage>
             </CardBody>            
             <CardFooter>
                 <Input  value={inputValue} onChange={

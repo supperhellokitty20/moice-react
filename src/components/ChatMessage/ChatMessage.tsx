@@ -1,9 +1,16 @@
 import React from 'react';
 
-export function ChatMessage(props: { message: string ,photoURL?:string}) {
+export interface IChatMessage{ 
+    id?: string ;  
+    message: string ;
+    time: string ; 
+    fromMe:boolean ;
+}
+export const ChatMessage:React.FC<IChatMessage> = (props) => {
   return (
     <div className="chat-message">
-        <p>{props.message}</p>
+       <span>{props.time}</span>
+       <span>{props.message}</span>
     </div>
   );
 }
