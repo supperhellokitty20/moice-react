@@ -11,8 +11,8 @@ export const ChatMessage:React.FC<IChatMessage> = ({id,time,message,fromMe}:ICha
     <div className="chat-message">
       { 
         fromMe ?( 
-          <span>ME: {time} : {message}</span>
-        ) : <span>Peer:{time}:{message}</span>
+          <span key={id}>ME: {time} : {message}</span>
+        ) : <span key={id}>Peer:{time}:{message}</span>
 
       }
     </div>
