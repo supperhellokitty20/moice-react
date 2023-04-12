@@ -1,90 +1,92 @@
-import React from "react"; import { useState, useEffect,useRef ,useCallback} from "react";
+import React from "react"; import { useState, useEffect, useRef, useCallback } from "react";
 import { Layout } from "../Layout/Layout";
-import { 
-    Button, 
-    Input, 
+import {
+    Button,
+    Input,
     Card,
-    CardBody, 
-    CardHeader, 
-    CardFooter, 
-    Heading ,
-    Box
-    } from "@chakra-ui/react";
+    CardBody,
+    CardHeader,
+    CardFooter,
+    Heading,
+    Box,
+    Alert,
+    AlertIcon,
+} from "@chakra-ui/react";
 import Peerjs from 'peerjs'
-import Peer, { DataConnection ,MediaConnection} from "peerjs"; 
-import { IChatMessage,ChatMessage } from "../ChatMessage/ChatMessage";
+import Peer, { DataConnection, MediaConnection } from "peerjs";
+import { IChatMessage, ChatMessage } from "../ChatMessage/ChatMessage";
+import { ArrowLeftIcon } from "@chakra-ui/icons";
 // let peer: PeerJs;
 export const Call = () => {
-    const [curId , setCurId] = useState<string>('');
-    const [inputValue , setInputValue] = useState<string>('');
-    const [connStatus , setConnStatus] = useState<boolean>(false) ;
-    const dataConnRef =  useRef<DataConnection>();
+    const [curId, setCurId] = useState<string>('');
+    const [inputValue, setInputValue] = useState<string>('');
+    const [connStatus, setConnStatus] = useState<boolean>(false);
+    const dataConnRef = useRef<DataConnection>();
     //Store message 
-    const [messagesData , setMessagesData] = useState<IChatMessage[]>([]) ;
-    const peerInstance = useRef<Peerjs>() ;
-    // const getUserMedia = navigator.getUserMedia || navigator['webkitGetUserMedia'] || navigator['mozGetUserMedia'];
-    const appendMessage = React.useCallback((message:string , fromMe:boolean)=>{ 
-        console.log('Append message called') ;
+    const [messagesData, setMessagesData] = useState<IChatMessage[]>([]);
+    const peerInstance = useRef<Peerjs>();
+    const appendMessage = React.useCallback((message: string, fromMe: boolean) => {
+        console.log('Append message called');
         const newMessage = {
-            id : crypto.randomUUID(),
+            id: crypto.randomUUID(),
             time: new Date().toLocaleTimeString(),
             message: message,
-            fromMe: fromMe 
+            fromMe: fromMe
         }
-        console.log('new message',newMessage)
-        return setMessagesData((prevMessages)=>[...prevMessages,newMessage]) ;
-    },[]); 
+        console.log('new message', newMessage)
+        return setMessagesData((prevMessages) => [...prevMessages, newMessage]);
+    }, []);
 
-    useEffect(()=>{ 
-        const peer = new Peerjs() ;
-        peer.on('open',(id)=>{ 
-            setCurId(id) ;
-        }) ;
+    useEffect(() => {
+        const peer = new Peerjs();
+        peer.on('open', (id) => {
+            setCurId(id);
+        });
         //Recv connection from other peer
-        peer.on('connection',(conn) => { 
-            conn.on('data',(data)=>{ 
-                console.log('data recieved :',data) ; 
-                console.log('Messages data: ',messagesData) ;
-                typeof data ==='string' ? 
-                appendMessage(data,false):console.log('Data not supported')  ;
+        peer.on('connection', (conn) => {
+            conn.on('data', (data) => {
+                console.log('data recieved :', data);
+                console.log('Messages data: ', messagesData);
+                typeof data === 'string' ?
+                    appendMessage(data, false) : console.log('Data not supported');
             })
-            dataConnRef.current = conn ;
-            setConnStatus(true) ;
-            conn.on('close',()=>{ 
-                setConnStatus(false) ;
+            dataConnRef.current = conn;
+            setConnStatus(true);
+            conn.on('close', () => {
+                setConnStatus(false);
 
             })
-        }) ;
-        peerInstance.current = peer ; 
-    },[]) 
-    const handleSendMessage = (message:string) => {
-        dataConnRef.current?.send(message) ;
-        appendMessage(message,true) ;
+        });
+        peerInstance.current = peer;
+    }, [])
+    const handleSendMessage = (message: string) => {
+        dataConnRef.current?.send(message);
+        appendMessage(message, true);
     }
     const connectToPeer = () => {
-        console.log("Input",inputValue) ;
-        if(peerInstance.current && inputValue){
-            const conn = peerInstance.current.connect(inputValue)  ;
-            conn.on('open' ,() => { 
-                setConnStatus(true) ;
+        console.log("Input", inputValue);
+        if (peerInstance.current && inputValue) {
+            const conn = peerInstance.current.connect(inputValue);
+            conn.on('open', () => {
+                setConnStatus(true);
             })
-            dataConnRef.current = conn ; 
-            conn.on('data' , (data) => { 
-                console.log('data',data) ;
+            dataConnRef.current = conn;
+            conn.on('data', (data) => {
+                console.log('data', data);
                 //Recv message from other peer
-                typeof data ==='string' ? 
-                appendMessage(data,false):console.log('Data not supported')  ;
-            }) ;
-            conn.on('close',()=>{ 
-                setConnStatus(false) ;
+                typeof data === 'string' ?
+                    appendMessage(data, false) : console.log('Data not supported');
+            });
+            conn.on('close', () => {
+                setConnStatus(false);
             })
 
         }
     }
-    const disconnect =  React.useCallback(()=>{
-        dataConnRef.current?.close() ;
-        setConnStatus(false) ;
-     },[dataConnRef.current]); 
+    const disconnect = React.useCallback(() => {
+        dataConnRef.current?.close();
+        setConnStatus(false);
+    }, [dataConnRef.current]);
 
     return (
         <Layout>
@@ -94,33 +96,33 @@ export const Call = () => {
                         <Heading>Moice</Heading>
                     </CardHeader>
                     <CardBody>
-                            <p>Peer id :{curId}</p>
-                            {
-                                connStatus?<span>Connected to {dataConnRef.current?.peer}</span>:
+                        <p>Peer id :{curId}</p>
+                        {
+                            connStatus ? <span>Connected to {dataConnRef.current?.peer}</span> :
                                 <>
                                     <span>Not connected</span>
-                                    <Input 
-                                    placeholder="Input your peer id here" 
-                                    value = {inputValue}
-                                    onChange = {(e) => {
-                                        setInputValue(e.target.value);
-                                    }} 
+                                    <Input
+                                        placeholder="Input your peer id here"
+                                        value={inputValue}
+                                        onChange={(e) => {
+                                            setInputValue(e.target.value);
+                                        }}
                                     />
                                 </>
-                            }
+                        }
                     </CardBody>
                     <CardFooter>
-                        { 
-                            connStatus && peerInstance? (
-                            <> 
-                                <Button onClick={disconnect}>Disconnect</Button> 
-                                <Box> 
-                                    <ChatRoom sendMessage={handleSendMessage} messages={messagesData}/>
-                                    <VideoChat peerInstance={peerInstance.current!} peerId={dataConnRef.current?.peer}></VideoChat>
-                                </Box>
+                        {
+                            connStatus && peerInstance ? (
+                                <>
+                                    <Button onClick={disconnect}>Disconnect</Button>
+                                    <Box>
+                                        <ChatRoom sendMessage={handleSendMessage} messages={messagesData} />
+                                        <VideoChat peerInstance={peerInstance.current!} peerId={dataConnRef.current?.peer}></VideoChat>
+                                    </Box>
 
-                            </>) :
-                            <Button onClick={connectToPeer}>Connect to your peer</Button>
+                                </>) :
+                                <Button onClick={connectToPeer}>Connect to your peer</Button>
                         }
                     </CardFooter>
                 </Card>
@@ -128,91 +130,141 @@ export const Call = () => {
         </Layout>
     )
 }
-
-function VideoChat(props:{ 
-    peerInstance :Peerjs  ,
-    peerId :string | undefined 
-}) { 
-    console.log("Peer instance",props.peerInstance);
-    console.log("Other Peer id ",props.peerId) ;
+/**
+ * TODO : Current implementation only allow  user must have to open a webcam stream first in order to  work
+ * , need fix to make it more seamless like once user click on call , it will automatically open webcam stream and send it to peer 
+ * @param props 
+ * @returns 
+ */
+function VideoChat(props: {
+    peerInstance: Peerjs,
+    peerId: string | undefined
+}) {
+    console.log("Peer instance", props.peerInstance);
+    console.log("Other Peer id ", props.peerId);
 
     const selfVideo = useRef<HTMLVideoElement>(null);
     const peerVideo = useRef<HTMLVideoElement>(null);
-    const [selfMediaStream , setSelfMediaStream] = useState<MediaStream>() ;
-    const [peerMediaStream , setPeerMediaStream] = useState<MediaStream>() ;
-    const [inComingCall,setIncomingCall] = useState<boolean>() ;
+    const [mediaDeviceNotFound, setMediaDeviceNotFound] = useState<boolean>(false);
+    const [selfMediaStream, setSelfMediaStream] = useState<MediaStream>();
+    const [peerMediaStream, setPeerMediaStream] = useState<MediaStream>();
+    const [inComingCall, setIncomingCall] = useState<boolean>();
 
-    const getUserMed= async () =>{ 
+    const getUserMed = async () => {
         let constraints = {
             audio: true,
-            video : {
+            video: {
                 width: 1280,
-                height: 720  
+                height: 720
             }
-        } ;
-        
-        await navigator.mediaDevices.getUserMedia(constraints).then((stream)=>{ 
-            showVideo(stream,selfVideo.current!,true)
+        };
+
+        await navigator.mediaDevices.getUserMedia(constraints).then((stream) => {
+            showVideo(stream, selfVideo.current!, true)
             setSelfMediaStream(stream);
-        }).catch((err)=> console.log("Error",err)) ;
+        }).catch((err) => {
+            console.error("Error", err)
+            setMediaDeviceNotFound(true);
+        }
+        )
     }
     //Open self cam on mount 
 
-    function showVideo(stream:MediaStream, video:HTMLVideoElement,muted:boolean) {
+    function showVideo(stream: MediaStream, video: HTMLVideoElement, muted: boolean) {
         video.srcObject = stream;
         video.volume = muted ? 0 : 1;
-        video.onloadedmetadata = function(e) {
-        video.play();
-        } ;
+        video.onloadedmetadata = function (e) {
+            video.play();
+        };
     }
-    props.peerInstance.on('call',async (call)=>{
+    props.peerInstance.on('call', async (call) => {
         console.log('Incoming call from peer');
-        await getUserMed(); 
-        if(!selfMediaStream) { 
-            console.log('No self media stream') ;
-            return 
+        // await getUserMed(); 
+        setIncomingCall(true);
+        if (!selfMediaStream) {
+            console.error('No self media stream');
+            return
         }
-        call.answer(selfMediaStream) ;
-        showStream(call,peerVideo.current!) ;
-    }) 
-    const showStream = (call:MediaConnection ,peerVideo:HTMLVideoElement)=>{ 
-        const callHandler = (stream:MediaStream) => { 
-            showVideo(stream,peerVideo,true) ;
-        }
-        call.on('stream',callHandler) ;
-        console.log('incoming stream') ;
-       return () => call.off('stream', callHandler);
-    }
+        console.log('Answering call with my stream', selfMediaStream);
+        call.answer(selfMediaStream);
+        setIncomingCall(false);
+        //Handle stream when peer answers
+        call.on('stream', (stream) => {
+            console.log('incoming peer stream');
+            showVideo(stream, peerVideo.current!, true);
+            setPeerMediaStream(stream);
+        })
+        // showStream(call,peerVideo.current!) ;
+    })
 
-    const callPeer = async ()=>{
-        if(typeof props.peerId === 'string'){ 
-            await getUserMed() ;
+    const callPeer = async () => {
+        if (typeof props.peerId === 'string') {
+            // await getUserMed() ;
             //Answer with our media stream 
-            const call = props.peerInstance.call(props.peerId,selfMediaStream!) ;
-            console.log("Call obj", call ) ;
-            showStream(call,peerVideo.current!) ;
-            console.log("Calling peeer with my stream",selfMediaStream) ;
+            showVideo(selfMediaStream!, selfVideo.current!, true);
+            const call = props.peerInstance.call(props.peerId, selfMediaStream!);
+            console.log("Calling peeer with my stream", selfMediaStream);
+            if (call) {
+                console.log("Call obj", call);
+                call.on('stream', (stream) => {
+                    console.log('incoming stream');
+                    showVideo(stream, peerVideo.current!, true);
+                })
+                // showStream(call,peerVideo.current!) ;
+            } else {
+                console.error("Cant call peer");
+            }
 
-        }else{ 
-            console.log('Peer id not found') ;
+        } else {
+            console.log('Peer id not found');
         }
-    }  ;
+    };
+    const AlertDeviceNotFound:React.FC = () => { 
+        return ( 
+            <Alert status='error'>
+                <AlertIcon />
+                No media device found
+            </Alert>
+        )
 
-    return( 
+    }
+    return (
         <>
             <Card>
                 <CardHeader>
                     <Heading>Video Chat</Heading>
                 </CardHeader>
-                <CardBody> 
+                <CardBody>
+                    {
+                        inComingCall && (
+                            <>
+                                <Alert status="success">Incoming call</Alert>
+                                <Button colorScheme='green' >Accept Call</Button>
+                            </>
+                        )
+                    }
+                    {
+                        mediaDeviceNotFound && (
+                           <AlertDeviceNotFound/>
+                        )
+                    }
                     <span>You</span>
                     <video ref={selfVideo} autoPlay muted></video>
                     <span>Peer</span>
                     <video ref={peerVideo} autoPlay muted></video>
                 </CardBody>
                 <CardFooter>
-                    <Button colorScheme="blue" onClick={callPeer}>Call</Button>
-                    <Button colorScheme='red'>End Call</Button>
+                    {
+                        !selfMediaStream ? (
+                            <Button colorScheme="blue" onClick={getUserMed}>Open Cam</Button>
+                        ) : (
+                            <>
+                                <Button colorScheme="blue" onClick={callPeer}>Call</Button>
+                                <Button colorScheme='red'>End Call</Button>
+                            </>
+                        )
+                    }
+
                 </CardFooter>
             </Card>
         </>
@@ -221,40 +273,39 @@ function VideoChat(props:{
 
 
 function ChatRoom(props: {
-    messages:IChatMessage[],
-    sendMessage:(message:string)=>void,
-})
-{
-    console.log('Messages sent to Chat Rooom:',props.messages) ;
+    messages: IChatMessage[],
+    sendMessage: (message: string) => void,
+}) {
+    console.log('Messages sent to Chat Rooom:', props.messages);
     const [inputValue, setInputValue] = React.useState<string>("");
-   const handleSendMessage = () => { 
-        if(inputValue) { 
-            props.sendMessage(inputValue) ;
-            setInputValue("") ;
+    const handleSendMessage = () => {
+        if (inputValue) {
+            props.sendMessage(inputValue);
+            setInputValue("");
         }
-   }
+    }
     return (
-        <> 
-        <Card> 
-            <CardHeader>
-                <Heading>Chat room</Heading>
-            </CardHeader>
-            <CardBody>
-            {   
-                props.messages.map((message) => { 
-                return  <ChatMessage {...message} key={message.id} />
-                })
-            }
-            </CardBody>            
-            <CardFooter>
-                <Input  value={inputValue} onChange={
-                    (e) => {
-                        setInputValue(e.target.value);
+        <>
+            <Card>
+                <CardHeader>
+                    <Heading>Chat room</Heading>
+                </CardHeader>
+                <CardBody>
+                    {
+                        props.messages.map((message) => {
+                            return <ChatMessage {...message} key={message.id} />
+                        })
                     }
-                } placeholder="Hello world"/>
-                <Button onClick={handleSendMessage}>Send</Button>
-            </CardFooter>
-        </Card>
+                </CardBody>
+                <CardFooter>
+                    <Input value={inputValue} onChange={
+                        (e) => {
+                            setInputValue(e.target.value);
+                        }
+                    } placeholder="Hello world" />
+                    <Button onClick={handleSendMessage}>Send</Button>
+                </CardFooter>
+            </Card>
         </>
     );
 }
