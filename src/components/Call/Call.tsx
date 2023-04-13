@@ -145,11 +145,11 @@ function VideoChat(props: {
 
     const selfVideo = useRef<HTMLVideoElement>(null);
     const peerVideo = useRef<HTMLVideoElement>(null);
+    const mediaConn = useRef<MediaConnection>();
     const [mediaDeviceNotFound, setMediaDeviceNotFound] = useState<boolean>(false);
     const [selfMediaStream, setSelfMediaStream] = useState<MediaStream>();
     const [peerMediaStream, setPeerMediaStream] = useState<MediaStream>();
     const [inComingCall, setIncomingCall] = useState<boolean>();
-
     const getUserMed = async () => {
         let constraints = {
             audio: true,
@@ -177,37 +177,68 @@ function VideoChat(props: {
             video.play();
         };
     }
+    const anwserCall = async (call:MediaConnection)=>  { 
+        call.answer(selfMediaStream);
+        setIncomingCall(false);
+        //Handle stream when peer answers
+        mediaConn.current = call ;
+        call.on('stream', (stream) => {
+            console.log('Incoming peer stream');
+            showVideo(stream, peerVideo.current!, true);
+            setPeerMediaStream(stream);
+            console.log("Peer media stream: ", peerMediaStream);
+        })
+        call.on('close',()=>{  
+            console.log('Call ended');
+            endCall() ;
+        })  ;
+    }
     props.peerInstance.on('call', async (call) => {
         console.log('Incoming call from peer');
         // await getUserMed(); 
+        mediaConn.current = call ;
         setIncomingCall(true);
         if (!selfMediaStream) {
             console.error('No self media stream');
             return
         }
-        console.log('Answering call with my stream', selfMediaStream);
-        call.answer(selfMediaStream);
-        setIncomingCall(false);
-        //Handle stream when peer answers
-        call.on('stream', (stream) => {
-            console.log('incoming peer stream');
-            showVideo(stream, peerVideo.current!, true);
-            setPeerMediaStream(stream);
+        anwserCall(call);
+        call.on('close',()=> { 
+            console.log('Call ended');
+            endCall() ;
         })
+        console.log('Answering call with my stream', selfMediaStream);
         // showStream(call,peerVideo.current!) ;
     })
-
+    // const  handlePeerDisconnect = () => {
+    //     console.log("Peer disconnect");
+    //     mediaConn.current?.close();
+    //     const peerTracks = peerMediaStream?.getTracks();
+    //     peerTracks?.forEach((track) => {track.stop()}) ; 
+    //     setPeerMediaStream(undefined);
+    // }  
+    const endCall = () => { 
+        console.log("Ending call");
+        const tracks = selfMediaStream?.getTracks();
+        tracks?.forEach((track) => {
+            track.stop();
+        }) ;
+        const peerTracks = peerMediaStream?.getTracks();
+        peerTracks?.forEach((track) => {track.stop()}) ; 
+        mediaConn.current?.close();
+    }
     const callPeer = async () => {
         if (typeof props.peerId === 'string') {
             // await getUserMed() ;
             //Answer with our media stream 
-            showVideo(selfMediaStream!, selfVideo.current!, true);
             const call = props.peerInstance.call(props.peerId, selfMediaStream!);
+            mediaConn.current = call ;
+            // showVideo(selfMediaStream!, selfVideo.current!, true);
             console.log("Calling peeer with my stream", selfMediaStream);
             if (call) {
-                console.log("Call obj", call);
                 call.on('stream', (stream) => {
                     console.log('incoming stream');
+                    setPeerMediaStream(stream) ;
                     showVideo(stream, peerVideo.current!, true);
                 })
                 // showStream(call,peerVideo.current!) ;
@@ -248,10 +279,13 @@ function VideoChat(props: {
                            <AlertDeviceNotFound/>
                         )
                     }
-                    <span>You</span>
+                    <Heading>You</Heading>
                     <video ref={selfVideo} autoPlay muted></video>
-                    <span>Peer</span>
-                    <video ref={peerVideo} autoPlay muted></video>
+                    <Heading>Peer</Heading>
+                    { 
+                        typeof peerMediaStream==undefined ?<span>No media stream from peer</span>:<></>
+                    }
+                    <video ref={peerVideo} autoPlay muted></video> 
                 </CardBody>
                 <CardFooter>
                     {
@@ -260,7 +294,7 @@ function VideoChat(props: {
                         ) : (
                             <>
                                 <Button colorScheme="blue" onClick={callPeer}>Call</Button>
-                                <Button colorScheme='red'>End Call</Button>
+                                <Button colorScheme='red' onClick={endCall}>End Call</Button>
                             </>
                         )
                     }
